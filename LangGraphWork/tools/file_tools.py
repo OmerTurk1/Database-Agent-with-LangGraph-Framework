@@ -1,4 +1,5 @@
-from langchain_core.tools import tool
+import sys
+from langchain_core.tools import tool, BaseTool
 import os
 import inspect
 
@@ -9,7 +10,7 @@ BASE_DIR = os.path.join(project_root, "workspace")
 if not os.path.exists(BASE_DIR):
     os.makedirs(BASE_DIR)
 
-def safe_path(path):
+def _safe_path(path):
     """Guarantees that the provided path is within the BASE_DIR to prevent directory traversal."""
     joined = os.path.abspath(os.path.join(BASE_DIR, path))
     if not joined.startswith(BASE_DIR):
@@ -24,6 +25,8 @@ def list_files_recursive(path: str = ".", max_depth: int = 2):
     """
     try:
         target_root = BASE_DIR
+        if not path==".":
+            target_root = os.path.join(BASE_DIR, path)
         actual_depth_limit = min(max_depth, 4)
         
         output = []
@@ -35,7 +38,7 @@ def list_files_recursive(path: str = ".", max_depth: int = 2):
             try:
                 items = sorted(os.listdir(current_path), key=lambda x: (not os.path.isdir(os.path.join(current_path, x)), x.lower()))
             except PermissionError:
-                return
+                return 
 
             for i, item in enumerate(items):
                 full_path = os.path.join(current_path, item)
@@ -53,49 +56,93 @@ def list_files_recursive(path: str = ".", max_depth: int = 2):
         output.append(f"📂 {os.path.basename(os.path.abspath(target_root)) or target_root}/")
         build_tree(target_root)
 
-        return "\n".join(output) if len(output) > 1 else "Dizin boş."
+        return "\n".join(output) if len(output) > 1 else "List is empty."
 
     except Exception as e:
-        return f"Hata: {str(e)}"
+        return f"Error: {str(e)}"
 
 @tool
 def create_file(filename: str, content: str = ""):
     """Create a new file with the given name and content in the determined directory."""
     try:
-        target = safe_path(filename)
+        target = _safe_path(filename)
         with open(target, "w", encoding="utf-8") as f:
             f.write(content)
-        return f"{filename} oluşturuldu."
+        return f"{filename} created."
     except Exception as e:
-        return f"Hata: {str(e)}"
+        return f"Error: {str(e)}"
     
 @tool
 def create_folder(foldername: str):
     """Creates a new folder with the given name in the determined directory."""
     try:
-        target = safe_path(foldername)
+        target = _safe_path(foldername)
         os.makedirs(target, exist_ok=True)
-        return f"{foldername} klasörü oluşturuldu."
+        return f"{foldername} folder created."
     except Exception as e:
-        return f"Hata: {str(e)}"
+        return f"Error: {str(e)}"
     
+@tool
+def read_file(filename: str):
+    """Reads and returns the content of the specified file."""
+    try:
+        target = _safe_path(filename)
+        if os.path.exists(target) and os.path.isfile(target):
+            with open(target, "r", encoding="utf-8") as f:
+                return f.read()
+        else:
+            return f"{filename} could not be found"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+@tool
+def edit_file(filename: str, new_content: str):
+    """Edits an existing file by replacing its content with new_content."""
+    try:
+        target = _safe_path(filename)
+        if os.path.exists(target) and os.path.isfile(target):
+            with open(target, "w", encoding="utf-8") as f:
+                f.write(new_content)
+            return f"{filename} updated."
+        else:
+            return f"{filename} could not be found."
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 @tool
 def delete_file(filename: str):
     """Deletes the specified file."""
     try:
-        target = safe_path(filename)
+        target = _safe_path(filename)
         if os.path.exists(target):
             os.remove(target)
-            return f"{filename} silindi."
+            return f"{filename} deleted."
         else:
-            return f"{filename} bulunamadı."
+            return f"{filename} could not be found."
     except Exception as e:
-        return f"Hata: {str(e)}"
+        return f"Error: {str(e)}"
     
-def get_all_tools():
-    """Finds all functions in this module that are decorated with @tool and returns them as a list."""
-    members = inspect.getmembers(inspect.getmodule(get_all_tools))
-    
-    return [obj for name, obj in members if hasattr(obj, "name") and hasattr(obj, "description")]
+@tool
+def delete_folder(foldername: str, delete_childs_too: bool = False):
+    """Deletes the specified folder and all its contents."""
+    try:
+        target = _safe_path(foldername)
+        if os.path.exists(target) and os.path.isdir(target):
+            if delete_childs_too:
+                import shutil
+                shutil.rmtree(target)
+            else:
+                os.rmdir(target)
+            return f"{foldername} deleted."
+        else:
+            return f"{foldername} could not be found."
+    except Exception as e:
+        return f"Error: {str(e)}"
 
-ALL_TOOLS = get_all_tools()
+def _get_all_tools():
+    """Dynamically retrieves all functions decorated with @tool in this module."""
+    module = sys.modules[__name__]
+    members = inspect.getmembers(module)
+    return [obj for name, obj in members if isinstance(obj, BaseTool)]
+
+ALL_TOOLS = _get_all_tools()

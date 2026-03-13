@@ -97,12 +97,21 @@ def read_file(filename: str):
         return f"Error: {str(e)}"
 
 @tool
-def edit_file(filename: str, new_content: str):
-    """Edits an existing file by replacing its content with new_content."""
+def edit_file(filename: str, new_content: str, mode: str = "replace"):
+    """
+    Edits an existing file by replacing its content with new_content.
+    mode: "replace" or "append"
+    """
     try:
+        if mode not in ["replace", "append"]:
+            return "Invalid mode. Use 'replace' or 'append'."
+        if mode == "append":
+            mode = "a"
+        else:
+            mode = "w"
         target = _safe_path(filename)
         if os.path.exists(target) and os.path.isfile(target):
-            with open(target, "w", encoding="utf-8") as f:
+            with open(target, mode, encoding="utf-8") as f:
                 f.write(new_content)
             return f"{filename} updated."
         else:

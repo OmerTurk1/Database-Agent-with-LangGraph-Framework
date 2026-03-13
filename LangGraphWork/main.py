@@ -38,7 +38,7 @@ def run_chat_loop():
                 # Display tool execution info in the terminal
                 if key == "tools":
                     last_msg = value["messages"][-1]
-                    tool_name = getattr(last_msg, "name", "Bilinmeyen Tool")
+                    tool_name = getattr(last_msg, "name", "Unknown Tool")
                     print(f"[System - {tool_name}]:\n {last_msg.content}")
                 
                 # Capture the agent's final response

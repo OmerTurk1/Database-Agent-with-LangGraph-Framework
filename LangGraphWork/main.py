@@ -49,7 +49,7 @@ def run_chat_loop():
 
         # Add agent's response to history
         if final_response:
-            print(f"\nAgent: {final_response}")
+            print(f"\n<<< Agent: {final_response}")
             chat_history.append({"role": "assistant", "content": final_response})
 
 if __name__ == "__main__":

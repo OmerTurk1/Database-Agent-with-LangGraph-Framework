@@ -1,3 +1,4 @@
+import shutil
 import sys
 from langchain_core.tools import tool, BaseTool
 import os
@@ -110,6 +111,34 @@ def edit_file(filename: str, new_content: str):
         return f"Error: {str(e)}"
 
 @tool
+def rename_file_or_folder(old_name: str, new_name: str):
+    """Renames a file or folder from old_name to new_name."""
+    try:
+        old_target = _safe_path(old_name)
+        new_target = _safe_path(new_name)
+        if os.path.exists(old_target):
+            os.rename(old_target, new_target)
+            return f"{old_name} renamed to {new_name}."
+        else:
+            return f"{old_name} could not be found."
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+@tool
+def move_file_or_folder(source: str, destination: str):
+    """Moves a file or folder from source to destination."""
+    try:
+        source_target = _safe_path(source)
+        destination_target = _safe_path(destination)
+        if os.path.exists(source_target):
+            shutil.move(source_target, destination_target)
+            return f"{source} moved to {destination}."
+        else:
+            return f"{source} could not be found."
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+@tool
 def delete_file(filename: str):
     """Deletes the specified file."""
     try:
@@ -123,13 +152,12 @@ def delete_file(filename: str):
         return f"Error: {str(e)}"
     
 @tool
-def delete_folder(foldername: str, delete_childs_too: bool = False):
+def delete_folder(foldername: str, delete_childs: bool = False):
     """Deletes the specified folder and all its contents."""
     try:
         target = _safe_path(foldername)
         if os.path.exists(target) and os.path.isdir(target):
-            if delete_childs_too:
-                import shutil
+            if delete_childs:
                 shutil.rmtree(target)
             else:
                 os.rmdir(target)

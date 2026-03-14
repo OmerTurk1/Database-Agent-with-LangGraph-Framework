@@ -12,7 +12,7 @@ def run_chat_loop():
         
         if user_input.lower() in ["exit", "quit"]:
             print("Goodbye!")
-            break
+            return
 
         if user_input.lower().strip() == "forget":
             print("Memory cleared. Starting fresh.")

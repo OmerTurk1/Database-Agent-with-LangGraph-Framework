@@ -15,7 +15,7 @@ def _safe_path(path):
     """Guarantees that the provided path is within the BASE_DIR to prevent directory traversal."""
     joined = os.path.abspath(os.path.join(BASE_DIR, path))
     if not joined.startswith(BASE_DIR):
-        raise PermissionError("Bu dizin dışına çıkma yetkin yok!")
+        raise PermissionError("You are not allowed to access paths outside the workspace!")
     return joined
 
 @tool
@@ -85,9 +85,16 @@ def create_folder(foldername: str):
     
 @tool
 def read_file(filename: str):
-    """Reads and returns the content of the specified file."""
+    """
+    Reads and returns the content of the specified file.
+    if filename is just a word, it will search on workspace;
+    and if it is a path, it will search on that path.
+    """
     try:
-        target = _safe_path(filename)
+        if os.path.isabs(filename): # if it's an absolute path, use it directly
+            target = filename
+        else: # only filename provided, search in workspace
+            target = _safe_path(filename)
         if os.path.exists(target) and os.path.isfile(target):
             with open(target, "r", encoding="utf-8") as f:
                 return f.read()
@@ -97,18 +104,14 @@ def read_file(filename: str):
         return f"Error: {str(e)}"
 
 @tool
-def edit_file(filename: str, new_content: str, mode: str = "replace"):
+def edit_file(filename: str, new_content: str, mode: str = "w"):
     """
     Edits an existing file by replacing its content with new_content.
-    mode: "replace" or "append"
+    mode: "w": replace or "a": append
     """
     try:
-        if mode not in ["replace", "append"]:
-            return "Invalid mode. Use 'replace' or 'append'."
-        if mode == "append":
-            mode = "a"
-        else:
-            mode = "w"
+        if mode not in ["w", "a"]:
+            return "Invalid mode. Use 'w' or 'a'."
         target = _safe_path(filename)
         if os.path.exists(target) and os.path.isfile(target):
             with open(target, mode, encoding="utf-8") as f:
@@ -142,6 +145,23 @@ def move_file_or_folder(source: str, destination: str):
         if os.path.exists(source_target):
             shutil.move(source_target, destination_target)
             return f"{source} moved to {destination}."
+        else:
+            return f"{source} could not be found."
+    except Exception as e:
+        return f"Error: {str(e)}"
+    
+@tool
+def copy_file_or_folder(source: str, destination: str):
+    """Copies a file or folder from source to destination."""
+    try:
+        source_target = _safe_path(source)
+        destination_target = _safe_path(destination)
+        if os.path.exists(source_target):
+            if os.path.isdir(source_target):
+                shutil.copytree(source_target, destination_target)
+            else:
+                shutil.copy2(source_target, destination_target)
+            return f"{source} copied to {destination}."
         else:
             return f"{source} could not be found."
     except Exception as e:

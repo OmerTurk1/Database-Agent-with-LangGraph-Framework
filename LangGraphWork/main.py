@@ -7,6 +7,8 @@ def run_chat_loop():
     print("--- File Assistant Connected ---")
     print("(Type 'exit' or 'quit' to close the session.)")
 
+    system_message = {"role": "system", "content": "You are a helpful assistant that can read and write files on the user's computer. Always ask for the file path and content when writing, and confirm the file path when reading. If you get any error, try to understand the error message and fix it. Otherwise, respond with the content of the file or a success message."}
+
     while True:
         user_input = input("\n>>> Type Message: ")
         
@@ -23,7 +25,7 @@ def run_chat_loop():
         chat_history.append({"role": "user", "content": user_input})
 
         # Memory Management: Keep only the last 10 messages (5 User + 5 Agent)
-        trimmed_history = chat_history[-10:]
+        trimmed_history = [system_message] + chat_history[-10:]  # Always include the system message for context
 
         initial_state = {
             "messages": trimmed_history

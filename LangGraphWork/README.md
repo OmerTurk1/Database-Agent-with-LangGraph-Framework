@@ -23,6 +23,7 @@ This project lets you chat with an agent that can execute file system operations
 Runs a read-eval-print loop (REPL) for the assistant.
 - Tracks message history.
 - Limits memory to the last 10 messages (5 user + 5 assistant).
+- System Prompt: always in context window, explains the crucial points of the agent itself.
 - Supports commands:
   - `exit` / `quit` → close session
   - `forget` → clear chat history
@@ -42,6 +43,7 @@ Contains tools decorated with `@tool` (LangChain tools) to safely operate on `wo
 - `edit_file`
 - `rename_file_or_folder`
 - `move_file_or_folder`
+- `copy_file_or_folder`
 - `delete_file`
 - `delete_folder`
 
@@ -94,7 +96,7 @@ Type questions and requests in natural language. The agent can automatically run
 ### Add a new tool
 1. Add a new `@tool` function to `tools/file_tools.py` (or another module).
 2. Make sure it uses `_safe_path()` or otherwise enforces sandboxing.
-3. The tool will be automatically picked up by `ALL_TOOLS`.
+3. The tool will be automatically picked up by `ALL_TOOLS` variable.
 
 ### Change the LLM
 Update `utils/helpers.py` to configure a different model, temperature, or client.
@@ -103,7 +105,7 @@ Update `utils/helpers.py` to configure a different model, temperature, or client
 
 ## ⚠️ Notes / Safety
 
-- All file operations are restricted to the `workspace/` directory (via `_safe_path`).
+- All file operations are restricted to the `workspace/` directory via `_safe_path` (except `read_file` tool).
 - The agent uses `gpt-4o-mini` by default; change it for another OpenAI model or provider.
 - The project currently does **not** include any ACL/authentication layer.
 
